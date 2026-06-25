@@ -2,7 +2,7 @@
 
 
 export CUDA_VISIBLE_DEVICES=4
-OUTPUT_DIR="model3/2ds_taukadial_dc_lang"
+OUTPUT_DIR="model/2ds_taukadial_dc_lang"
 RUN_NAME="2ds_taukadial_dc_lang"
 REPORT_TO="wandb"
 NUM_FOLD=10

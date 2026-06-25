@@ -1,7 +1,7 @@
 #!/bin/bash
 
 export CUDA_VISIBLE_DEVICES=7
-OUTPUT_DIR="model3/2ds_taukadial"
+OUTPUT_DIR="model/2ds_taukadial"
 RUN_NAME="2ds_taukadial"
 REPORT_TO="wandb"
 NUM_FOLD=10

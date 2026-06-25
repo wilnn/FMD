@@ -1,7 +1,7 @@
 #!/bin/bash
 
 export CUDA_VISIBLE_DEVICES=4
-OUTPUT_DIR="model3/prepare_2TB_no_dc"
+OUTPUT_DIR="model/prepare_2TB_no_dc"
 RUN_NAME="prepare_2TB_no_dc"
 REPORT_TO="wandb"
 NUM_FOLD=10

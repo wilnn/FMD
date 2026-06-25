@@ -1,7 +1,7 @@
 #!/bin/bash
 
 export CUDA_VISIBLE_DEVICES=0
-OUTPUT_DIR="model3/2ds_prepare_dc_gen_2"
+OUTPUT_DIR="model/2ds_prepare_dc_gen_2"
 RUN_NAME="2ds_prepare_dc_gen_2"
 REPORT_TO="wandb"
 NUM_FOLD=10

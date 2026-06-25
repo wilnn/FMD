@@ -1,7 +1,7 @@
 #!/bin/bash
 
 export CUDA_VISIBLE_DEVICES=2
-OUTPUT_DIR="model3/xls-r_baseline"
+OUTPUT_DIR="model/xls-r_baseline"
 RUN_NAME="xls-r_baseline"
 REPORT_TO="wandb"
 NUM_FOLD=10

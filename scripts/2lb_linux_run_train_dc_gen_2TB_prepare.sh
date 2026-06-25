@@ -1,7 +1,7 @@
 #!/bin/bash
 
 export CUDA_VISIBLE_DEVICES=7
-OUTPUT_DIR="model3/2lb_prepare_2TB_lam5_dc_gen_text_no_aug20_avgtext"
+OUTPUT_DIR="model/2lb_prepare_2TB_lam5_dc_gen_text_no_aug20_avgtext"
 RUN_NAME="2lb_prepare_2TB_lam5_dc_gen_text_no_aug20_avgtext"
 REPORT_TO="wandb"
 NUM_FOLD=10

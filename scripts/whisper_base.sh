@@ -1,7 +1,7 @@
 #!/bin/bash
 
 export CUDA_VISIBLE_DEVICES=3
-OUTPUT_DIR="model3/whisper_baseline"
+OUTPUT_DIR="model/whisper_baseline"
 RUN_NAME="whisper_baseline"
 REPORT_TO="wandb"
 NUM_FOLD=10

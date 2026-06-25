@@ -1,7 +1,7 @@
 #!/bin/bash
 
 export CUDA_VISIBLE_DEVICES=4
-OUTPUT_DIR="model3/prepare_2TB_lam2_dc_lang_text__nodroptask"
+OUTPUT_DIR="model/prepare_2TB_lam2_dc_lang_text__nodroptask"
 RUN_NAME="prepare_2TB_lam2_dc_lang_text__nodroptask"
 REPORT_TO="wandb"
 NUM_FOLD=10

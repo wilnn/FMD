@@ -1,7 +1,7 @@
 #!/bin/bash
 
 export CUDA_VISIBLE_DEVICES=2
-OUTPUT_DIR="model3/ast_baseline"
+OUTPUT_DIR="model/ast_baseline"
 RUN_NAME="ast_baseline"
 REPORT_TO="wandb"
 NUM_FOLD=10

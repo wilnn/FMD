@@ -1,7 +1,7 @@
 #!/bin/bash
 
 export CUDA_VISIBLE_DEVICES=1
-OUTPUT_DIR="model3/noTB_no_dc_img_text_no_aug14_avgtext"
+OUTPUT_DIR="model/noTB_no_dc_img_text_no_aug14_avgtext"
 RUN_NAME="noTB_no_dc_img_text_no_aug14_avgtext"
 REPORT_TO="wandb"
 NUM_FOLD=10

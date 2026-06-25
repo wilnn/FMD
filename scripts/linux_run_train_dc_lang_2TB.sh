@@ -1,7 +1,7 @@
 #!/bin/bash
 
 export CUDA_VISIBLE_DEVICES=0
-OUTPUT_DIR="model3/2TB_lam2_dc_lang_img_text_no_aug30_avgtext"
+OUTPUT_DIR="model/2TB_lam2_dc_lang_img_text_no_aug30_avgtext"
 RUN_NAME="2TB_lam2_dc_lang_img_text_no_aug30_avgtext"
 start_from_no_dc="model3/2TB_no_dc_img_text_no_aug14_avgtext"
 REPORT_TO="wandb"
