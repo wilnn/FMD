@@ -7,7 +7,7 @@ REPORT_TO="wandb"
 NUM_FOLD=10
 DATASET_PATH="./dataset/prepare/final_combined_dataset.csv"
 Audio_PARENT_PATH="./dataset/prepare/acoustic/train_audios/"
-WANDB_PROJECT_NAME='InvaCogni'
+WANDB_PROJECT_NAME='FMD'
 MAX_DATASET_SIZE=-1 # negative to use the entire dataset
 BATCH_SIZE=8
 NUM_EPOCHS=14
@@ -18,7 +18,7 @@ TASK_CLASSIFIER_FFN="[[512, 3072], 'gelu', [3072, 3072], 'gelu', 'dropout-0.3', 
 CROSS_ATTENTION_FFN="[[768, 3072], 'gelu', 'dropout-0.5', [3072, 768], 'gelu']"
 ATTENTION_DROPOUT=0.35
 NUM_ATTENTION_HEAD=8
-model_class="InvaCogni_2TB_noimg"
+model_class="FMD_2TB_noimg"
 DATASET="prepare"
 PREPARE_NUM_LB=2
 

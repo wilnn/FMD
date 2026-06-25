@@ -11,7 +11,7 @@ TEST_DS="taukdial"
 DATASET_PATH2="./dataset/taukadial/final_combined_dataset.csv"
 Audio_PARENT_PATH2="./dataset/taukadial/taukadial/train/"
 IMAGE_PARENT_PATH="./dataset/taukadial/images/images/"
-WANDB_PROJECT_NAME='InvaCogni'
+WANDB_PROJECT_NAME='FMD'
 MAX_DATASET_SIZE=-1 # negative to use the entire dataset
 BATCH_SIZE=8
 NUM_EPOCHS=20
@@ -22,7 +22,7 @@ TASK_CLASSIFIER_FFN="[[512, 3072], 'gelu', [3072, 3072], 'gelu', [3072, 768], 'g
 CROSS_ATTENTION_FFN="[[512, 3072], 'gelu', 'dropout-0.5', [3072, 768], 'gelu']"
 ATTENTION_DROPOUT=0.35
 NUM_ATTENTION_HEAD=8
-model_class="InvaCogni_2TB_noimg"
+model_class="FMD_2TB_noimg"
 DATASET="prepare"
 # --loss_lambda=0.125 \
 #--remove_punc_in_text \

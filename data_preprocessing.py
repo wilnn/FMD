@@ -250,15 +250,15 @@ def main():
 #main()
 
 def make_prepare_dataset():
-    '''df = pd.read_csv("/home/public/htnguyen/projects/InvaCogni/dataset/prepare/acoustic/acoustic_data/train_labels.csv")
+    '''df = pd.read_csv("/home/public/htnguyen/projects/FMD/dataset/prepare/acoustic/acoustic_data/train_labels.csv")
     print(len(df))
     print(df.columns)
-    folder = "/home/public/htnguyen/projects/InvaCogni/dataset/prepare/acoustic/train_audios"
+    folder = "/home/public/htnguyen/projects/FMD/dataset/prepare/acoustic/train_audios"
     num_files = sum(os.path.isfile(os.path.join(folder, f)) for f in os.listdir(folder))
     print(num_files)
 
-    csv_path = "/home/public/htnguyen/projects/InvaCogni/dataset/prepare/acoustic/acoustic_data/train_labels.csv"
-    mp3_folder = "/home/public/htnguyen/projects/InvaCogni/dataset/prepare/acoustic/train_audios"
+    csv_path = "/home/public/htnguyen/projects/FMD/dataset/prepare/acoustic/acoustic_data/train_labels.csv"
+    mp3_folder = "/home/public/htnguyen/projects/FMD/dataset/prepare/acoustic/train_audios"
 
     df = pd.read_csv(csv_path)
 
@@ -421,7 +421,7 @@ def make_prepare_dataset():
 # Load dataset
 # ----------------------------
 # Replace with your real file name/path
-df = pd.read_csv("/home/public/htnguyen/projects/InvaCogni/dataset/prepare/final_combined_dataset.csv")
+df = pd.read_csv("/home/public/htnguyen/projects/FMD/dataset/prepare/final_combined_dataset.csv")
 
 # ----------------------------
 # Basic Data Cleaning (Optional but recommended)

@@ -2,9 +2,9 @@ from torch.utils.data import Dataset, DataLoader
 from sklearn.model_selection import StratifiedKFold
 from train_args import trainArgs
 
-from InvaCogni.modeling_invacogni import InvaCogni, InvaCogni_2TB, InvaCogni_no_TB, InvaCogni_2TBnoimg, whisper_baseline
-from InvaCogni.configuration_invacogni import InvaCogniConfig
-from InvaCogni.processing_invacogni import InvaCogniProcessor
+from FMD.modeling_FMD import FMD, FMD_2TB, FMD_no_TB, FMD_2TBnoimg, whisper_baseline
+from FMD.configuration_FMD import FMDConfig
+from FMD.processing_FMD import FMDProcessor
 import unicodedata
 #from transformers import RobertaTokenizer, RobertaModel
 
@@ -35,36 +35,20 @@ import gc
 import math
 from safetensors.torch import load_file
 
-
-# TODO: IMPORTANT (DO THIS IN THE PROCESSOR CLASS OR AFTER PROCESSOR CLASS IN TRAINING LOOP)
-    # IF USE THE torch.nn.MultiheadAttention then need to flip the 
-    # attention mask output by the model processor because hugginface 
-    # 1 and 0 in the attention mask means the opposite
-
-
-# TODO: create dataset and collate_fn
-        # method 1: pass processor to dataset class and process examples in
-        # the __get_item__ method before returning. the collate_fn function
-        # will just turn them into batches, get labels out of it
-        #  turn them into tensor, etc., (this allow to use multiple worker better)
-        # method 2: also do the processor inside the collate_fn function
-        # multiple workers don't means much in this case
-
-    
-parser = HfArgumentParser((trainArgs, InvaCogniConfig.to_dataclass()))
+parser = HfArgumentParser((trainArgs, FMDConfig.to_dataclass()))
 
 # Parse arguments from CLI
 training_args, model_config_args = parser.parse_args_into_dataclasses()
 
 model_class_dict = {
-    "InvaCogni": InvaCogni,
-    "InvaCogni_2TB": InvaCogni_2TB,
-    "InvaCogni_no_TB": InvaCogni_no_TB,
-    "InvaCogni_2TB_noimg":InvaCogni_2TBnoimg,
+    "FMD": FMD,
+    "FMD_2TB": FMD_2TB,
+    "FMD_no_TB": FMD_no_TB,
+    "FMD_2TB_noimg":FMD_2TBnoimg,
     "whisper_baseline":whisper_baseline,
 }
 
-class InvaCogniTrainer(Trainer):
+class FMDTrainer(Trainer):
     def training_step(
         self,
         model,
@@ -94,13 +78,11 @@ class InvaCogniTrainer(Trainer):
 
         #Compute GRL lambda schedule: λ(p) = 2 / (1 + exp(-γ p)) - 1
         gamma = wrapped_model.config.loss_gamma
-        #print(f"rrrrrrrrr {self._max_train_steps}")
         p = current_step / max_steps
         lambda_val = 2.0 / (1.0 + math.exp(-gamma * p)) - 1.0
 
         # Update model.config.loss_lambda
         wrapped_model.config.loss_lambda = lambda_val
-        #print(f"dddddddddddd {wrapped_model.config.loss_lambda}")
 
         # Continue the normal HF training step
         return super().training_step(
@@ -108,23 +90,6 @@ class InvaCogniTrainer(Trainer):
             inputs=inputs,
             num_items_in_batch=num_items_in_batch
         )
-
-'''
-class lossCallback(TrainerCallback):
-    def on_log(self, args: TrainingArguments,
-               state: TrainerState,
-               control: TrainerControl, **kwargs):
-'''
-
-'''
-def compute_loss(outputs,
-                labels,
-                num_items_in_batch):
-    wandb.log({"tc_loss": outputs['tc_loss'].item()})
-    wandb.log({"language_dc_loss": outputs['language_dc_loss'].item()})
-    wandb.log({"gender_dc_loss": outputs['gender_dc_loss'].item()})
-    return outputs["loss"] if isinstance(outputs, dict) else outputs[0] # copied from the default compute loss function 
-'''
 
 
 class PrepareDataset(Dataset):
@@ -181,13 +146,6 @@ class PrepareDataset(Dataset):
                            )
     
 def PrepareDataset_collate_fn(batch):
-    #batch[0]['text_pad_token'] = 0
-    #print(batch[1].keys())
-    #exit(0)
-    '''
-    batch is a list of dict
-    where each dict is returned by TaukdialDataset.__getitem__()
-    '''
     audio = [n['audio'] for n in batch]
     gender_dc_labels = [n['gender_dc_labels'] for n in batch] if training_args.dc_gender else None
     language_dc_labels = [n['language_dc_labels'] for n in batch] if training_args.dc_language else None
@@ -234,9 +192,6 @@ def PrepareDataset_collate_fn(batch):
             }
 
 def PrepareDataset_collate_fn2(batch):
-    #batch[0]['text_pad_token'] = 0
-    #print(batch[1].keys())
-    #exit(0)
     audio = [n['audio'] for n in batch]
     gender_dc_labels = [n['gender_dc_labels'] for n in batch]
     language_dc_labels = [n['language_dc_labels'] for n in batch]
@@ -334,14 +289,7 @@ class TaukdialDataset(Dataset):
                            )
     
 def TaukdialDataset_collate_fn(batch):
-    #batch[0]['text_pad_token'] = 0
-    #print(batch[1].keys())
-    #exit(0)
-    '''
-    batch is a list of dict
-    where each dict is returned by TaukdialDataset.__getitem__()
-    '''
-    if training_args.model_class != "InvaCogni_2TB_noimg" or training_args.test_ds is None:
+    if training_args.model_class != "FMD_2TB_noimg" or training_args.test_ds is None:
         pixel_values = [n['pixel_values'] for n in batch]
     audio = [n['audio'] for n in batch]
     gender_dc_labels = [n['gender_dc_labels'] for n in batch] if training_args.dc_gender else None
@@ -361,7 +309,7 @@ def TaukdialDataset_collate_fn(batch):
         input_ids.append(F.pad(n['input_ids'], (0, to_pad), value=training_args.pad_token))
         input_ids_attention_mask.append(F.pad(n['input_ids_attention_mask'], (0, to_pad), value=0))
 
-    if training_args.model_class != "InvaCogni_2TB_noimg" or training_args.test_ds is None:
+    if training_args.model_class != "FMD_2TB_noimg" or training_args.test_ds is None:
         pixel_values = torch.cat(pixel_values, dim=0)
     audio = torch.cat(audio, dim=0)
     input_ids = torch.cat(input_ids, dim=0)
@@ -378,7 +326,7 @@ def TaukdialDataset_collate_fn(batch):
             "language_dc_labels": language_dc_labels,
             "labels":labels,
             }
-    if training_args.model_class != "InvaCogni_2TB_noimg" or training_args.test_ds is None:
+    if training_args.model_class != "FMD_2TB_noimg" or training_args.test_ds is None:
         #print("IMAGE IS ADDED")
         out["pixel_values"] = pixel_values
     return out
@@ -387,7 +335,7 @@ def TaukdialDataset_collate_fn2(batch):
     #batch[0]['text_pad_token'] = 0
     #print(batch[1].keys())
     #exit(0)
-    if training_args.model_class != "InvaCogni_2TB_noimg" or training_args.test_ds is None:
+    if training_args.model_class != "FMD_2TB_noimg" or training_args.test_ds is None:
         pixel_values = [n['pixel_values'] for n in batch]
     audio = [n['audio'] for n in batch]
     gender_dc_labels = [n['gender_dc_labels'] for n in batch]
@@ -406,7 +354,7 @@ def TaukdialDataset_collate_fn2(batch):
         input_ids.append(F.pad(n['input_ids'], (0, to_pad), value=0))
         input_ids_attention_mask.append(F.pad(n['input_ids_attention_mask'], (0, to_pad), value=0))
 
-    if training_args.model_class != "InvaCogni_2TB_noimg" or training_args.test_ds is None:
+    if training_args.model_class != "FMD_2TB_noimg" or training_args.test_ds is None:
         pixel_values = torch.cat(pixel_values, dim=0)
 
     audio = torch.cat(audio, dim=0)
@@ -424,21 +372,12 @@ def TaukdialDataset_collate_fn2(batch):
             "language_dc_labels": language_dc_labels,
             "labels":labels,
             }
-    if training_args.model_class != "InvaCogni_2TB_noimg" or training_args.test_ds is None:
+    if training_args.model_class != "FMD_2TB_noimg" or training_args.test_ds is None:
         #print("IMAGE IS ADDED")
         out["pixel_values"] = pixel_values
     return out
 
 def compute_metrics_fn(p: EvalPrediction):
-    #print(f"eeeeeeeeeeeeeeeee{p.predictions[0]}")
-    #print(type(p.predictions))
-    #print(len(p.predictions))
-    #print(p.predictions[0].shape)
-    #print(f"############{p.label_ids[2]}")
-    #print(type(p.label_ids))
-    #print(len(p.predictions))
-    #print(p.label_ids[2].shape)
-    #exit(0)
     if training_args.dataset == "prepare" and training_args.prepare_num_lb > 2:
         preds = p.predictions[0]  # (B, C) logits
         preds = np.argmax(preds, axis=-1)  # (B,)
@@ -449,20 +388,6 @@ def compute_metrics_fn(p: EvalPrediction):
     labels = p.label_ids[2].squeeze(-1).astype(int)
     tc_f1 = f1_score(labels, preds, average="macro")
     tc_bal_acc = balanced_accuracy_score(labels, preds)
-    #print("#########")
-    #print(p.label_ids)
-    #print(type(p.label_ids))
-    #print(len(p.predictions))
-    #print(p.label_ids[0].shape)
-    #print("#########")
-    #print(p.inputs[0])
-    #print(type(p.inputs))
-    #print(p.inputs.shape)
-    #print("#########")
-    #print(p.losses)
-    #print(type(p.losses))
-    #print(p.losses.shape)
-    #exit(0)
 
     return {
         "tc_f1": tc_f1,
@@ -473,56 +398,46 @@ def compute_metrics_fn(p: EvalPrediction):
 
 def do_one_fold(train_samples, test_samples, fold_num):
 
-    invacogni_config = InvaCogniConfig(**vars(model_config_args))
+    FMD_config = FMDConfig(**vars(model_config_args))
     print("\n#################################")
     print("#################################\n")
 
-    vision_encoder = AutoModel.from_pretrained(invacogni_config.vision_encoder_path).vision_model
+    vision_encoder = AutoModel.from_pretrained(FMD_config.vision_encoder_path).vision_model
     print(f"loaded the vision encoder: {type(vision_encoder)}")
-    #print("44444444444")
     if not training_args.train_image_encoder:
-        #print("5555555555555555")
         for param in vision_encoder.parameters():
             param.requires_grad = False
         print(f"froze the vision encoder: {type(vision_encoder)}")
     
-    text_encoder = AutoModel.from_pretrained(invacogni_config.text_encoder_path)
-    #print("666666666")
+    text_encoder = AutoModel.from_pretrained(FMD_config.text_encoder_path)
     print(f"loaded text encoder: {type(text_encoder)}")
     if not training_args.train_text_encoder and not training_args.dc_language and not training_args.dc_gender:
-        #print("7777777777")
         for param in text_encoder.encoder.parameters():
             param.requires_grad = False
         print(f"froze the text encoder (except pooler layer) because train_text_encoder={training_args.train_text_encoder} and training_args.dc_language={training_args.dc_language}")
     
 
-    #config = AutoConfig.from_pretrained(my_model_config.audio_encoder_path)
-    #config.mask_time_prob = 0.0 # prevent the model from masking the audio embeddings
-    #config.mask_feature_prob = 0.0 # prevent the model from masking the audio embeddings
-    #audio_encoder = AutoModel.from_pretrained(my_model_config.audio_encoder_path, config=config)
     if training_args.is_wav2vec2 or training_args.is_ast:
-        audio_encoder = AutoModel.from_pretrained(invacogni_config.audio_encoder_path)
+        audio_encoder = AutoModel.from_pretrained(FMD_config.audio_encoder_path)
         if training_args.is_wav2vec2:
             audio_encoder.gradient_checkpointing_enable()
     else:
-        audio_encoder = AutoModel.from_pretrained(invacogni_config.audio_encoder_path).encoder
+        audio_encoder = AutoModel.from_pretrained(FMD_config.audio_encoder_path).encoder
     print(f"loaded audio encoder: {type(audio_encoder)}")
-    #print("8888888888888")
     if not training_args.dc_language and not training_args.dc_gender and not training_args.train_audio_encoder:
-        #print("99999999999")
         for param in audio_encoder.parameters():
             param.requires_grad = False
         print(f"froze the audio encoder because training_args.dc_language={training_args.dc_language} and training_args.dc_gender={training_args.dc_gender} and training_args.train_audio_encoder={training_args.train_audio_encoder}")
     
     print(f"The loaded model class is {training_args.model_class}")
-    if training_args.model_class != "InvaCogni_2TB_noimg":
-        model = model_class_dict[training_args.model_class](invacogni_config,
+    if training_args.model_class != "FMD_2TB_noimg":
+        model = model_class_dict[training_args.model_class](FMD_config,
                         vision_encoder=vision_encoder,
                         text_encoder=text_encoder,
                         audio_encoder=audio_encoder,
                         )
     else:
-        model = model_class_dict[training_args.model_class](invacogni_config,
+        model = model_class_dict[training_args.model_class](FMD_config,
                         text_encoder=text_encoder,
                         audio_encoder=audio_encoder,
                         )
@@ -561,7 +476,7 @@ def do_one_fold(train_samples, test_samples, fold_num):
                         param.requires_grad = False
                     print(f"froze (again) the audio encoder because training_args.dc_language={training_args.dc_language} and training_args.dc_gender={training_args.dc_gender} and training_args.train_audio_encoder={training_args.train_audio_encoder}")
     
-    if training_args.model_class == "InvaCogni_2TB_noimg":
+    if training_args.model_class == "FMD_2TB_noimg":
         del vision_encoder
         gc.collect()
 
@@ -571,7 +486,7 @@ def do_one_fold(train_samples, test_samples, fold_num):
     #print(model)
 
     collate_func = TaukdialDataset_collate_fn if training_args.dataset != "prepare" else PrepareDataset_collate_fn
-    trainer = InvaCogniTrainer(
+    trainer = FMDTrainer(
         model=model,
         args=training_args,
         train_dataset=train_samples,
@@ -595,17 +510,13 @@ def do_one_fold(train_samples, test_samples, fold_num):
     # checkpoint at that location and that check point is the best model checkpoint
     # (this can be done by using save_total_limit=1 and save_strategy=best))
     if trainer.is_world_process_zero():
-        #print("4444444444444444")
         all_items = os.listdir(training_args.output_dir)
         for i in all_items:
             if i.startswith("checkpoint-"):
-                #print("333333333333")
                 state_dict = load_file(f"{training_args.output_dir}/{i}/model.safetensors")  # returns a dictionary of tensors
                 model.load_state_dict(state_dict)
                 print(f"loaded model from the checkpoint {training_args.output_dir}/{i}/model.safetensors")
                 break
-        #trainer.save_model(f"./{training_args.output_dir}")
-        #processor.save_pretrained(f"./{training_args.output_dir}")
 
     return model, trainer.is_world_process_zero()
 
@@ -614,9 +525,7 @@ def evaluate(model, dataset, is_train_dataset, fold_num):
     model.eval()  # Set model to evaluation mode
 
     if training_args.test_ds is not None and not is_train_dataset:
-        #print(f"99999999999999{is_train_dataset}")
         collate_func = TaukdialDataset_collate_fn2 if training_args.test_ds != "prepare" else PrepareDataset_collate_fn2
-        #print(f"loaded collate fn for test ds {collate_func}")
     else:
         collate_func = TaukdialDataset_collate_fn2 if training_args.dataset != "prepare" else PrepareDataset_collate_fn2
     
@@ -685,25 +594,7 @@ def evaluate(model, dataset, is_train_dataset, fold_num):
             labels_list.append(labels)
             genders_list.append(genders)
             languages_list.append(languages)
-        
-        # TODO: DONE
-            # if > training_args.decision_threshold then class 1 else 0
-            # use scikit learn to compute f1 score and
-            # balanced accuracy per groups (male, female, english,
-            # chinese, MCI, NC)
-            # ACCUMUATE THE RESULT ACROSS ALL FOLDS AND TAKE AVERAGE
 
-        # TODO: DONE
-            # plot the data reprensetation on 2d graph with T-SNE
-            # also write script to plot it before any training
-            # plot on the same plot for every fold so that the plots
-            # will contains all the datapoints in the dataset at the end
-        #print(genders_list[0])
-        #print(genders_list[0].shape)
-        #print(preds_list)
-        #print(preds_list[0].ndim)
-        #print(preds_list[3].ndim)
-        #exit(0)
         preds_list = np.concatenate(preds_list, axis=0)
         labels_list = np.concatenate(labels_list, axis=0)
         genders_list = np.concatenate(genders_list, axis=0)
@@ -802,7 +693,7 @@ if __name__ == "__main__":
     feature_extractor = AutoFeatureExtractor.from_pretrained(model_config_args.audio_encoder_path)
     training_args.pad_token = int(tokenizer.pad_token_id)
     
-    processor = InvaCogniProcessor(feature_extractor=feature_extractor,
+    processor = FMDProcessor(feature_extractor=feature_extractor,
                                 image_processor=image_processor,
                                 tokenizer=tokenizer,)
 
@@ -813,32 +704,7 @@ if __name__ == "__main__":
         val_samples = None
     elif training_args.max_dataset_size == 0:
         raise ValueError("the max_dataset_size arg can not be 0")
-    '''else:
-        counts = {
-            ('english', 'M'): 5,
-            ('english', 'F'): 7,
-            ('chinese', 'M'): 5,
-            ('chinese', 'F'): 6,
-        }
 
-        # function that samples up to n rows from each group
-        def sample_up_to(g):
-            n = counts.get((g.name[0], g.name[1]), 0)
-            return g.sample(n=min(n, len(g)), replace=False, random_state=training_args.seed)
-
-        val_samples = (dataset
-                    .groupby(['language', 'sex'], group_keys=False)
-                    .apply(sample_up_to))
-        
-        # remaining dataset
-        dataset = dataset.drop(index=val_samples.index)
-        val_samples = [val_samples.iloc[i] for i in range(len(val_samples))]
-        val_samples = TaukdialDataset(val_samples,
-                                processor=processor,
-                                audio_parent_path=training_args.audio_parent_path,
-                                image_parent_path=training_args.image_parent_path,
-                                aug_img=False, aug_audio=False,)
-    '''  
 
     taukdial_map_label = {
         "english_M":0,
@@ -856,16 +722,7 @@ if __name__ == "__main__":
     labels = []
     for i in range(len(dataset)):
         labels.append(map_label[f"{dataset.iloc[i]['language']}_{dataset.iloc[i]['sex']}"])
-    '''
-    temp = {}
-    for nn in labels:
-        if nn in temp:
-            temp[nn] += 1
-        else:
-            temp[nn] = 1
-    print(temp)
-    print(len(dataset))
-    exit(0)'''
+
 
     if training_args.test_ds is not None:
         dataset2 = pandas.read_csv(training_args.dataset_path2)

@@ -20,7 +20,7 @@ class GradReverse(torch.autograd.Function):
         return (-ctx.grl_lambda)*grad_output, None
     
 
-class InvaCogniGRL(nn.Module):
+class FMDGRL(nn.Module):
     def __init__(self, config):
         super().__init__()
         self.grl_lambda = config.grl_lambda
@@ -29,7 +29,7 @@ class InvaCogniGRL(nn.Module):
         # Use the custom autograd function
         return GradReverse.apply(x, self.grl_lambda)
     
-class InvaCogniVisionEncoder(nn.Module):
+class FMDVisionEncoder(nn.Module):
     def __init__(self, config, vision_encoder=None):
         super().__init__()
         if vision_encoder:
@@ -41,7 +41,7 @@ class InvaCogniVisionEncoder(nn.Module):
     def forward(self, pixel_values, **kwargs):
         return self.vision_encoder(pixel_values, **kwargs)
 
-class InvaCogniTextEncoder(nn.Module):
+class FMDTextEncoder(nn.Module):
     def __init__(self, config, text_encoder=None):
         super().__init__()
         if text_encoder:
@@ -59,7 +59,7 @@ class InvaCogniTextEncoder(nn.Module):
                                  attention_mask=attention_mask,
                                  **kwargs,)
     
-class InvacogniAudioEncoder(nn.Module):
+class FMDAudioEncoder(nn.Module):
     def __init__(self, config, audio_encoder=None):
         super().__init__()
         if audio_encoder:
@@ -78,7 +78,7 @@ class InvacogniAudioEncoder(nn.Module):
 
 
 
-class InvaCogniFFN(nn.Module):
+class FMDFFN(nn.Module):
     def __init__(self, config, dims_per_layer: list[list], last_act=True):
         super().__init__()
 
@@ -108,7 +108,7 @@ class InvaCogniFFN(nn.Module):
 
 
 # more custom version of the cross attention
-class InvaCogniAttention2(nn.Module):
+class FMDAttention2(nn.Module):
     def __init__(self, attention_dropout=0.0, hidden_size=None,
                  num_attention_heads=1, qdim=None, kdim=None,
                  vdim=None, projdim=None, out_features_projvdim=None,
@@ -201,7 +201,7 @@ class InvaCogniAttention2(nn.Module):
         return self.out_proj(attn_out)
 
 
-class InvaCogniCrossAttention(nn.Module):
+class FMDCrossAttention(nn.Module):
     def __init__(self, config, kdim=768, vdim=768):
         super().__init__()
         self.embed_dim = config.hidden_size
@@ -240,7 +240,7 @@ class InvaCogniCrossAttention(nn.Module):
             return attn_output
 
 @dataclass
-class InvaCogniClassifierOutput(SequenceClassifierOutput):
+class FMDClassifierOutput(SequenceClassifierOutput):
     # use Optional[...] so it's backward-compatible when field is not present
     gender_dc_logits: Optional[torch.Tensor] = None
     gender_dc_loss: Optional[torch.Tensor] = None
@@ -248,29 +248,29 @@ class InvaCogniClassifierOutput(SequenceClassifierOutput):
     language_dc_logits: Optional[torch.Tensor] = None
     language_dc_loss: Optional[torch.Tensor] = None
 
-#class InvaCogni(nn.Module, PyTorchModelHubMixin):
-class InvaCogni(nn.Module):
+#class FMD(nn.Module, PyTorchModelHubMixin):
+class FMD(nn.Module):
     def __init__(self, config, vision_encoder=None, text_encoder=None,
                  audio_encoder=None):
         super().__init__()
         self.config = config # if use PretrainedMoDel as parent class then
                             # don't have to do this
 
-        self.gender_GRL = InvaCogniGRL(config)
-        self.language_GRL = InvaCogniGRL(config)
-        self.vision_encoder = InvaCogniVisionEncoder(config, vision_encoder)
-        self.text_encoder = InvaCogniTextEncoder(config, text_encoder)
-        self.audio_encoder = InvacogniAudioEncoder(config, audio_encoder)
+        self.gender_GRL = FMDGRL(config)
+        self.language_GRL = FMDGRL(config)
+        self.vision_encoder = FMDVisionEncoder(config, vision_encoder)
+        self.text_encoder = FMDTextEncoder(config, text_encoder)
+        self.audio_encoder = FMDAudioEncoder(config, audio_encoder)
 
-        self.audio_FFN = InvaCogniFFN(config, config.audio_FFN)
+        self.audio_FFN = FMDFFN(config, config.audio_FFN)
 
-        self.gender_domain_classifier = InvaCogniFFN(config, config.gender_domain_classifier_FFN)
-        self.language_domain_classifier = InvaCogniFFN(config, config.language_domain_classifier_FFN)
-        self.task_classifier = InvaCogniFFN(config, config.task_classifier_FFN)
+        self.gender_domain_classifier = FMDFFN(config, config.gender_domain_classifier_FFN)
+        self.language_domain_classifier = FMDFFN(config, config.language_domain_classifier_FFN)
+        self.task_classifier = FMDFFN(config, config.task_classifier_FFN)
         
-        self.cross_attn = InvaCogniCrossAttention(config)
+        self.cross_attn = FMDCrossAttention(config)
         self.cross_attn_layer_norm = nn.LayerNorm(normalized_shape=config.hidden_size)
-        self.cross_attn_FFN = InvaCogniFFN(config, config.cross_attn_FFN)
+        self.cross_attn_FFN = FMDFFN(config, config.cross_attn_FFN)
         self.cross_attn_FFN_layer_norm = nn.LayerNorm(normalized_shape=config.hidden_size)
         #self.self_attn = MyModelSelfAttention(config)
         #self.self_attn_layer_norm = nn.LayerNorm(normalized_shape=config.hidden_size)
@@ -357,20 +357,6 @@ class InvaCogni(nn.Module):
                 return_dict=True,
                   **kwargs):
 
-        # TODO: DONE
-            # WORD2VEC2 AND WHISPER DO NOT HAVE POOLED OUTPUT.
-            # PEOPLE COMPUTE THE POOLED OUTPUT FROM IT BY COMPUTE THE MEAN OF
-            # THE EMBEDDINGS
-            # >>> pooled_output = hidden_states.mean(dim=1)
-            # >>> logits = self.classifier(pooled_output)
-
-        # TODO: DONE
-            # must do return_dict = True so that the word2vec model will 
-            # return dict instead of tuple (only for this model. siglip do not
-            # have this problem)
-        # TODO: DONE
-            # residual connection and layer norm(RMSnorm?) after attention
-
         #print("do audio")
         audio_out = self.audio_encoder(audio, return_dict=True)
         #print("###########")
@@ -402,34 +388,15 @@ class InvaCogni(nn.Module):
                                                   pixel_values_out.last_hidden_state.shape[1]),
                                                   dtype=torch.bool, device=pixel_values_out.last_hidden_state.device)
         
-        # TODO: DONE
-        # only the text pooled emebddings will do the attention
-
-        # TODO: DONE
-            # use image attention mask(like when image have padded patches)
-            # as key attention mask
-            # use input_ids attention mask as query attention mask
-        # TODO: DONE
-            # can cross attention between text and image be multi block? SHOULD NOT(BLIP MODEL DON'T DO MULTIPLE CROSS ATTENTION BLOCK. ONLY 1 TO CROSS ATTEND IMAGE AND TEXT)
-            # like in multi block attention, normally you use the output from the
-            # previous block to the new block, but, how can cross attention
-            # do multiblock when only the text output is outputed not the image?
-        
-        # TODO: IMPORTANT
-            # IF USE THE torch.nn.MultiheadAttention then need to flip the 
-            # attention mask output by the model processor because hugginface 
-            # 1 and 0 in the attention mask means the opposite
         
         #print("do gender dc")
         gender_dc_logits = None
         if gender_dc_labels is not None and gender_dc_labels.dim() > 1: # if training and or given gender_dc_labels(for evaluation)
-            #print("33333333333333333333")
             gender_dc_logits = self.gender_domain_classify(audio_pooled_embed)
 
         #print("do language dc")
         language_dc_logits = None
         if language_dc_labels is not None and language_dc_labels.dim() > 1:
-            #print("44444444444444444444")
             language_dc_logits = self.language_domain_classify(input_ids_out=input_ids_out,
                                                                audio_pooled_embed=audio_pooled_embed,
                                                                input_ids_attention_mask=input_ids_attention_mask)
@@ -446,11 +413,9 @@ class InvaCogni(nn.Module):
         total_loss = None
         tc_loss = torch.tensor(0, device=tc_logits.device)
         if gender_dc_labels is not None and self.training and gender_dc_labels.dim() > 1:
-            #print("111111111111111111111")
             gender_dc_loss = F.binary_cross_entropy_with_logits(gender_dc_logits, gender_dc_labels)
 
         if language_dc_labels is not None and self.training and language_dc_labels.dim() > 1:
-            #print("2222222222222222222222")
             language_dc_loss = F.binary_cross_entropy_with_logits(language_dc_logits, language_dc_labels)
             
         if labels is not None:
@@ -465,9 +430,8 @@ class InvaCogni(nn.Module):
         if not return_dict:
             output = (tc_logits, tc_loss, gender_dc_logits, gender_dc_loss, language_dc_logits, language_dc_loss)
             return ((total_loss,) + output) if total_loss is not None else output
-        #print(f"dddddddddd{gender_dc_logits}")
         
-        return InvaCogniClassifierOutput(
+        return FMDClassifierOutput(
             loss=total_loss,
             logits=tc_logits,
             #hidden_states=None,
@@ -481,29 +445,29 @@ class InvaCogni(nn.Module):
 
 
 # version with no transformer block
-class InvaCogni_no_TB(nn.Module):
+class FMD_no_TB(nn.Module):
     def __init__(self, config, vision_encoder=None, text_encoder=None,
                  audio_encoder=None):
         super().__init__()
         self.config = config # if use PretrainedMoDel as parent class then
                             # don't have to do this
 
-        self.gender_GRL = InvaCogniGRL(config)
-        self.language_GRL = InvaCogniGRL(config)
-        self.vision_encoder = InvaCogniVisionEncoder(config, vision_encoder)
-        self.text_encoder = InvaCogniTextEncoder(config, text_encoder)
-        self.audio_encoder = InvacogniAudioEncoder(config, audio_encoder)
+        self.gender_GRL = FMDGRL(config)
+        self.language_GRL = FMDGRL(config)
+        self.vision_encoder = FMDVisionEncoder(config, vision_encoder)
+        self.text_encoder = FMDTextEncoder(config, text_encoder)
+        self.audio_encoder = FMDAudioEncoder(config, audio_encoder)
 
-        self.audio_FFN = InvaCogniFFN(config, config.audio_FFN)
-        self.img_FFN = InvaCogniFFN(config, [[768, 3072], 'gelu', 'dropout-0.3', [3072, 768], 'gelu'])
-        self.text_FFN = InvaCogniFFN(config, [[768, 3072], 'gelu', 'dropout-0.3', [3072, 768], 'gelu'])
+        self.audio_FFN = FMDFFN(config, config.audio_FFN)
+        self.img_FFN = FMDFFN(config, [[768, 3072], 'gelu', 'dropout-0.3', [3072, 768], 'gelu'])
+        self.text_FFN = FMDFFN(config, [[768, 3072], 'gelu', 'dropout-0.3', [3072, 768], 'gelu'])
 
-        self.fuse_FFN1 = InvaCogniFFN(config, [[1536, 3072], 'gelu', 'dropout-0.3', [3072, 768], 'gelu'])
-        self.fuse_FFN2 = InvaCogniFFN(config, [[1536, 3072], 'gelu', 'dropout-0.3', [3072, 768], 'gelu'])
+        self.fuse_FFN1 = FMDFFN(config, [[1536, 3072], 'gelu', 'dropout-0.3', [3072, 768], 'gelu'])
+        self.fuse_FFN2 = FMDFFN(config, [[1536, 3072], 'gelu', 'dropout-0.3', [3072, 768], 'gelu'])
 
-        self.gender_domain_classifier = InvaCogniFFN(config, config.gender_domain_classifier_FFN)
-        self.language_domain_classifier = InvaCogniFFN(config, config.language_domain_classifier_FFN)
-        self.task_classifier = InvaCogniFFN(config, config.task_classifier_FFN)
+        self.gender_domain_classifier = FMDFFN(config, config.gender_domain_classifier_FFN)
+        self.language_domain_classifier = FMDFFN(config, config.language_domain_classifier_FFN)
+        self.task_classifier = FMDFFN(config, config.task_classifier_FFN)
  
     def gender_domain_classify(self, inp):
         return self.gender_domain_classifier(self.gender_GRL(inp))
@@ -584,7 +548,7 @@ class InvaCogni_no_TB(nn.Module):
             output = (tc_logits, tc_loss, gender_dc_logits, gender_dc_loss, language_dc_logits, language_dc_loss)
             return ((total_loss,) + output) if total_loss is not None else output
         
-        return InvaCogniClassifierOutput(
+        return FMDClassifierOutput(
             loss=total_loss,
             logits=tc_logits,
             gender_dc_logits=gender_dc_logits,
@@ -594,36 +558,36 @@ class InvaCogni_no_TB(nn.Module):
             tc_loss=tc_loss,
         )
 
-class InvaCogni_2TB(nn.Module):
+class FMD_2TB(nn.Module):
     def __init__(self, config, vision_encoder=None, text_encoder=None,
                  audio_encoder=None):
         super().__init__()
         self.config = config # if use PretrainedMoDel as parent class then
                             # don't have to do this
 
-        self.gender_GRL = InvaCogniGRL(config)
-        self.language_GRL = InvaCogniGRL(config)
-        self.vision_encoder = InvaCogniVisionEncoder(config, vision_encoder)
-        self.text_encoder = InvaCogniTextEncoder(config, text_encoder)
-        self.audio_encoder = InvacogniAudioEncoder(config, audio_encoder)
+        self.gender_GRL = FMDGRL(config)
+        self.language_GRL = FMDGRL(config)
+        self.vision_encoder = FMDVisionEncoder(config, vision_encoder)
+        self.text_encoder = FMDTextEncoder(config, text_encoder)
+        self.audio_encoder = FMDAudioEncoder(config, audio_encoder)
 
-        self.gender_domain_classifier = InvaCogniFFN(config, config.gender_domain_classifier_FFN)
-        self.language_domain_classifier = InvaCogniFFN(config, config.language_domain_classifier_FFN)
-        self.task_classifier = InvaCogniFFN(config, config.task_classifier_FFN)
+        self.gender_domain_classifier = FMDFFN(config, config.gender_domain_classifier_FFN)
+        self.language_domain_classifier = FMDFFN(config, config.language_domain_classifier_FFN)
+        self.task_classifier = FMDFFN(config, config.task_classifier_FFN)
         
-        self.cross_attn = InvaCogniCrossAttention(config)
+        self.cross_attn = FMDCrossAttention(config)
         self.cross_attn_layer_norm = nn.LayerNorm(normalized_shape=config.hidden_size)
-        self.cross_attn_FFN = InvaCogniFFN(config, config.cross_attn_FFN)
+        self.cross_attn_FFN = FMDFFN(config, config.cross_attn_FFN)
         self.cross_attn_FFN_layer_norm = nn.LayerNorm(normalized_shape=config.hidden_size)
 
-        self.cross_attn2 = InvaCogniAttention2(attention_dropout=config.attention_dropout,
+        self.cross_attn2 = FMDAttention2(attention_dropout=config.attention_dropout,
                                                num_attention_heads=config.num_attention_heads,
                                                qdim=512, kdim=768, vdim=768, projdim=512, 
                                                out_features_projvdim=512,
                                                out_features_projoutdim=512,)
         
         self.cross_attn_layer_norm2 = nn.LayerNorm(normalized_shape=512)
-        self.cross_attn_FFN2 = InvaCogniFFN(config, [[512, 3072], 'gelu', 'dropout-0.5', [3072, 512], 'gelu'])
+        self.cross_attn_FFN2 = FMDFFN(config, [[512, 3072], 'gelu', 'dropout-0.5', [3072, 512], 'gelu'])
         self.cross_attn_FFN_layer_norm2 = nn.LayerNorm(normalized_shape=512)
 
     def gender_domain_classify(self, inp):
@@ -724,7 +688,7 @@ class InvaCogni_2TB(nn.Module):
             output = (tc_logits, tc_loss, gender_dc_logits, gender_dc_loss, language_dc_logits, language_dc_loss)
             return ((total_loss,) + output) if total_loss is not None else output
         
-        return InvaCogniClassifierOutput(
+        return FMDClassifierOutput(
             loss=total_loss,
             logits=tc_logits,
             #hidden_states=None,
@@ -736,30 +700,30 @@ class InvaCogni_2TB(nn.Module):
             tc_loss=tc_loss,
         )
     
-class InvaCogni_2TBnoimg(nn.Module):
+class FMD_2TBnoimg(nn.Module):
     def __init__(self, config, text_encoder=None,
                  audio_encoder=None):
         super().__init__()
         self.config = config # if use PretrainedMoDel as parent class then
                             # don't have to do this
 
-        self.gender_GRL = InvaCogniGRL(config)
-        self.language_GRL = InvaCogniGRL(config)
-        self.text_encoder = InvaCogniTextEncoder(config, text_encoder)
-        self.audio_encoder = InvacogniAudioEncoder(config, audio_encoder)
+        self.gender_GRL = FMDGRL(config)
+        self.language_GRL = FMDGRL(config)
+        self.text_encoder = FMDTextEncoder(config, text_encoder)
+        self.audio_encoder = FMDAudioEncoder(config, audio_encoder)
 
-        self.gender_domain_classifier = InvaCogniFFN(config, config.gender_domain_classifier_FFN)
-        self.language_domain_classifier = InvaCogniFFN(config, config.language_domain_classifier_FFN)
-        self.task_classifier = InvaCogniFFN(config, config.task_classifier_FFN)
+        self.gender_domain_classifier = FMDFFN(config, config.gender_domain_classifier_FFN)
+        self.language_domain_classifier = FMDFFN(config, config.language_domain_classifier_FFN)
+        self.task_classifier = FMDFFN(config, config.task_classifier_FFN)
         
-        self.cross_attn2 = InvaCogniAttention2(attention_dropout=config.attention_dropout,
+        self.cross_attn2 = FMDAttention2(attention_dropout=config.attention_dropout,
                                                num_attention_heads=config.num_attention_heads,
                                                qdim=512, kdim=768, vdim=768, projdim=512, 
                                                out_features_projvdim=512,
                                                out_features_projoutdim=512,)
         
         self.cross_attn_layer_norm2 = nn.LayerNorm(normalized_shape=512)
-        self.cross_attn_FFN2 = InvaCogniFFN(config, [[512, 3072], 'gelu', 'dropout-0.5', [3072, 512], 'gelu'])
+        self.cross_attn_FFN2 = FMDFFN(config, [[512, 3072], 'gelu', 'dropout-0.5', [3072, 512], 'gelu'])
         self.cross_attn_FFN_layer_norm2 = nn.LayerNorm(normalized_shape=512)
 
     def gender_domain_classify(self, inp):
@@ -836,7 +800,7 @@ class InvaCogni_2TBnoimg(nn.Module):
             output = (tc_logits, tc_loss, gender_dc_logits, gender_dc_loss, language_dc_logits, language_dc_loss)
             return ((total_loss,) + output) if total_loss is not None else output
         
-        return InvaCogniClassifierOutput(
+        return FMDClassifierOutput(
             loss=total_loss,
             logits=tc_logits,
             #hidden_states=None,
@@ -857,14 +821,14 @@ class whisper_baseline(nn.Module):
         self.config = config # if use PretrainedMoDel as parent class then
                             # don't have to do this
 
-        self.gender_GRL = InvaCogniGRL(config)
-        self.language_GRL = InvaCogniGRL(config)
-        self.audio_encoder = InvacogniAudioEncoder(config, audio_encoder)
-        self.text_encoder = InvaCogniTextEncoder(config, text_encoder)
+        self.gender_GRL = FMDGRL(config)
+        self.language_GRL = FMDGRL(config)
+        self.audio_encoder = FMDAudioEncoder(config, audio_encoder)
+        self.text_encoder = FMDTextEncoder(config, text_encoder)
 
-        self.gender_domain_classifier = InvaCogniFFN(config, config.gender_domain_classifier_FFN)
-        self.language_domain_classifier = InvaCogniFFN(config, config.language_domain_classifier_FFN)
-        self.task_classifier = InvaCogniFFN(config, config.task_classifier_FFN)
+        self.gender_domain_classifier = FMDFFN(config, config.gender_domain_classifier_FFN)
+        self.language_domain_classifier = FMDFFN(config, config.language_domain_classifier_FFN)
+        self.task_classifier = FMDFFN(config, config.task_classifier_FFN)
         
 
     def gender_domain_classify(self, inp):
@@ -924,7 +888,7 @@ class whisper_baseline(nn.Module):
             output = (tc_logits, tc_loss, gender_dc_logits, gender_dc_loss, language_dc_logits, language_dc_loss)
             return ((total_loss,) + output) if total_loss is not None else output
         
-        return InvaCogniClassifierOutput(
+        return FMDClassifierOutput(
             loss=total_loss,
             logits=tc_logits,
             #hidden_states=None,

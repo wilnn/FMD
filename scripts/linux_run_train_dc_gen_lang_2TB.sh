@@ -10,7 +10,7 @@ DATASET_PATH="./dataset/taukadial/final_combined_dataset.csv"
 Audio_PARENT_PATH="./dataset/taukadial/taukadial/train/"
 IMAGE_PARENT_PATH="./dataset/taukadial/images/images/"
 DECISION_THRESHOLD=0.5
-WANDB_PROJECT_NAME='InvaCogni'
+WANDB_PROJECT_NAME='FMD'
 MAX_DATASET_SIZE=-1 # negative to use the entire dataset
 BATCH_SIZE=4
 NUM_EPOCHS=30
@@ -21,7 +21,7 @@ TASK_CLASSIFIER_FFN="[[1280, 3072], 'gelu', 'dropout-0.3', [3072, 768], 'gelu', 
 CROSS_ATTENTION_FFN="[[768, 3072], 'gelu', 'dropout-0.5', [3072, 768], 'gelu']"
 ATTENTION_DROPOUT=0.35
 NUM_ATTENTION_HEAD=8
-model_class="InvaCogni_2TB"
+model_class="FMD_2TB"
 #--remove_punc_in_text \
 
 accelerate launch train.py \

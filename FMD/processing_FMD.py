@@ -23,7 +23,7 @@ from transformers import Wav2Vec2FeatureExtractor, ASTFeatureExtractor
 import numpy as np
 import random
 
-class InvaCogniProcessor(ProcessorMixin):
+class FMDProcessor(ProcessorMixin):
     attributes = ["feature_extractor", "image_processor", "tokenizer"]
 
     image_processor_class = "AutoImageProcessor" # for image
@@ -163,7 +163,7 @@ class InvaCogniProcessor(ProcessorMixin):
         # same length but whisper encoder will not use the attention mask
         # because it will simply ignore the silence in the log mel spectrogram
         # which means it will ignore the padding which is just silences automatically
-        # refer to: https://github.com/huggingface/transformers/blob/main/src/transformers/models/whisper/modeling_whisper.py#L631
+        # refer to: https://github.com/huggingface/transformers/blob/c96378c4136f5882fee50d8ff8ee1e9588a17eb6/src/transformers/models/whisper/modeling_whisper.py#L607-L609
         waveforms = self.feature_extractor(waveforms,
                                             sampling_rate=target_sampling_rate, 
                                             return_tensors="pt")

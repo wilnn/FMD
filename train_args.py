@@ -15,13 +15,13 @@ class trainArgs(TrainingArguments):
     dc_gender: bool = False
     dc_language: bool = False
     decision_threshold: float = 0.5
-    wandb_project_name: str = 'InvaCogni'
+    wandb_project_name: str = 'FMD'
     max_dataset_size: int = -1 # -1 means use full size.
                             # > 0 means dataset of that many samples
     aug_audio: bool = False
     aug_img: bool = False
     remove_punc_in_text: bool = False
-    model_class: str = 'InvaCogni'
+    model_class: str = 'FMD'
     start_from_no_dc: str = None
     dataset: str = "taukdial"
     prepare_num_lb: int = 3

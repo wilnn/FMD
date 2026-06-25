@@ -1,4 +1,4 @@
-from modeling_invacogni import InvaCogniCrossAttention, InvaCogniAttention2
+from modeling_FMD import FMDCrossAttention, FMDAttention2
 
 import torch
 class config:
@@ -14,14 +14,14 @@ k_mask = torch.tensor([[1, 1, 0], [1, 0, 0]], dtype=torch.bool)
 q_mask = torch.tensor([[1], [1]], dtype=torch.bool)
 
 c = config(2, 4)
-model2 = InvaCogniAttention2(attention_dropout=0.0, num_attention_heads=2,
+model2 = FMDAttention2(attention_dropout=0.0, num_attention_heads=2,
                                   qdim=4, kdim=4, vdim=4, projdim=8, 
                                   out_features_projvdim=12, out_features_projoutdim=14)
 out = model2(k=img, v=img, q=t, key_attention_mask=k_mask, is_causal=True)
 print(out)
 print(out.shape)
 exit(0)
-model = InvaCogniCrossAttention(c)
+model = FMDCrossAttention(c)
 print("do attention")
 #out = model(img, t, k_mask, q_mask)
 #print(out)

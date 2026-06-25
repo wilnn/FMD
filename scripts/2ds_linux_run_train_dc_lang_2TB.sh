@@ -13,7 +13,7 @@ TEST_DS="prepare"
 DATASET_PATH2="./dataset/prepare/final_combined_dataset.csv"
 Audio_PARENT_PATH2="./dataset/prepare/acoustic/train_audios/"
 DECISION_THRESHOLD=0.5
-WANDB_PROJECT_NAME='InvaCogni'
+WANDB_PROJECT_NAME='FMD'
 MAX_DATASET_SIZE=-1 # negative to use the entire dataset
 BATCH_SIZE=4
 NUM_EPOCHS=30
@@ -24,7 +24,7 @@ TASK_CLASSIFIER_FFN="[[512, 3072], 'gelu', 'dropout-0.3', [3072, 768], 'gelu', '
 CROSS_ATTENTION_FFN="[[512, 3072], 'gelu', 'dropout-0.5', [3072, 768], 'gelu']"
 ATTENTION_DROPOUT=0.35
 NUM_ATTENTION_HEAD=8
-model_class="InvaCogni_2TB_noimg"
+model_class="FMD_2TB_noimg"
 #--remove_punc_in_text \
 
 accelerate launch --config_file ./accelerate_config.yaml train.py \

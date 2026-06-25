@@ -1,6 +1,6 @@
-from modeling_invacogni import InvaCogni
-from configuration_invacogni import InvaCogniConfig
-from processing_invacogni import InvaCogniProcessor
+from modeling_FMD import FMD
+from configuration_FMD import FMDConfig
+from processing_FMD import FMDProcessor
 from transformers import AutoTokenizer, RobertaTokenizer, RobertaModel
 
 from PIL import Image
@@ -12,7 +12,7 @@ from transformers import AutoConfig, Wav2Vec2Processor, Wav2Vec2Model, AutoFeatu
 import soundfile as sf
 
 
-config = InvaCogniConfig()
+config = FMDConfig()
 
 vision_encoder = AutoModel.from_pretrained(config.vision_encoder_path).vision_model
 print("##############")
@@ -39,12 +39,12 @@ tokenizer = AutoTokenizer.from_pretrained(config.text_encoder_path)
 #exit(0)
 feature_extractor = AutoFeatureExtractor.from_pretrained(config.audio_encoder_path)
 
-processor = InvaCogniProcessor(feature_extractor=feature_extractor,
+processor = FMDProcessor(feature_extractor=feature_extractor,
                              image_processor=image_processor,
                              tokenizer=tokenizer)
 
 
-model = InvaCogni(config,
+model = FMD(config,
                 vision_encoder=vision_encoder,
                 text_encoder=text_encoder,
                 audio_encoder=audio_encoder,
