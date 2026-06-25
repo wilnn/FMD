@@ -21,7 +21,7 @@ import os
 pd.set_option('display.max_columns', None)   # show all columns
 pd.set_option('display.max_colwidth', None)  # show full column width
 
-def create_dataset():
+def create_taukadial_dataset():
     columns = ["id", "audio_file", "text", "age", "sex", "mmse", "language", "image", "label"]
     df = pd.DataFrame(columns=columns)
 
@@ -249,8 +249,8 @@ def main():
 
 #main()
 
-def make_prepare_dataset():
-    '''df = pd.read_csv("/home/public/htnguyen/projects/FMD/dataset/prepare/acoustic/acoustic_data/train_labels.csv")
+def create_prepare_dataset():
+    df = pd.read_csv("/home/public/htnguyen/projects/FMD/dataset/prepare/acoustic/acoustic_data/train_labels.csv")
     print(len(df))
     print(df.columns)
     folder = "/home/public/htnguyen/projects/FMD/dataset/prepare/acoustic/train_audios"
@@ -291,45 +291,8 @@ def make_prepare_dataset():
     parquet = pd.read_parquet(parquet)
     #print(len(parquet))
     #print(parquet.columns)
-    #print(parquet['language'].iloc[0])'''
-    
+    #print(parquet['language'].iloc[0])
 
-    '''
-    id,audio_file,text,age,sex,mmse,language,image,label
-    taukdial-002-1,taukdial-002-1.wav," Yes. Do you",72,F,29,english,image-1.jpg,NC
-    
-    parquet
-    'file_name', 'transcribed_text', 'language'
-    gyvr, This looks familiar. A woman drying dishes., en (cn)
-
-    label
-    uid            aaop
-    diagnosis_control     0.0
-    diagnosis_mci         1.0
-    diagnosis_adrd        0.0
-    Name: 0, dtype: object
-    Index(['uid', 'diagnosis_control', 'diagnosis_mci', 'diagnosis_adrd'], dtype='object')
-    
-    
-    metadata
-    uid                                        aaop
-    age                                          72
-    gender                                   female
-    split                                     train
-    hash           e4ed5943c8460c2cf324d4a23c7d6fa1
-    filesize_kb                             186.144
-    Name: 0, dtype: object
-    Index(['uid', 'age', 'gender', 'split', 'hash', 'filesize_kb'], dtype='object')
-    '''
-
-    '''
-    lb['diagnosis'] = (
-            lb['diagnosis_control'] * 0 +
-            lb['diagnosis_mci'] * 1 +
-            lb['diagnosis_adrd'] * 2
-        ).astype(int)
-
-    '''
 
     df_parquet = pd.read_parquet("./dataset/prepare/acoustic/audio_to_text_w_language_train.parquet")
     df_label = pd.read_csv("./dataset/prepare/acoustic/acoustic_data/train_labels.csv")
@@ -417,41 +380,7 @@ def make_prepare_dataset():
     print(len(df))
     print(df_metadata['age'].median())
 
-# ----------------------------
-# Load dataset
-# ----------------------------
-# Replace with your real file name/path
-df = pd.read_csv("/home/public/htnguyen/projects/FMD/dataset/prepare/final_combined_dataset.csv")
+    df.to_csv("./dataset/prepare/final_combined_dataset.csv", index=False)
 
-# ----------------------------
-# Basic Data Cleaning (Optional but recommended)
-# ----------------------------
-# Remove rows with missing values in key columns
-df = df.dropna(subset=["age", "sex", "language", "label"])
-
-# ----------------------------
-# 1. Average Age per Label
-# ----------------------------
-avg_age = df.groupby("label")["age"].mean()
-print("\n===== Average Age per Label =====")
-print(avg_age)
-
-# ----------------------------
-# 2. Number of People per Sex within Each Label
-# ----------------------------
-sex_counts = df.groupby(["label", "sex"]).size().unstack(fill_value=0)
-
-print("\n===== Sex Counts per Label =====")
-print(sex_counts)
-
-# ----------------------------
-# 3. Number of People per Language within Each Label
-# ----------------------------
-language_counts = df.groupby(["label", "language"]).size().unstack(fill_value=0)
-
-print("\n===== Language Counts per Label =====")
-print(language_counts)
-
-print(df['age'].mean())
-
-print("\nResults saved as CSV files!")
+create_taukadial_dataset()
+create_prepare_dataset()
